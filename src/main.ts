@@ -6,6 +6,7 @@ import { SpatialNavigation } from "./SpatialNavigation";
 
 SpatialNavigation.init({
   shouldFocusDOMNode: true,
+  shouldUseNativeEvents: true,
 });
 
 document.addEventListener("focusin", (e) => {
