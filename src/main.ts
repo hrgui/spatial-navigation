@@ -5,12 +5,17 @@ import { SpatialNavigation } from "./SpatialNavigation";
 (window as any).SpatialNavigation = SpatialNavigation;
 
 SpatialNavigation.init({
-  shouldFocusDOMNode: true,
-  shouldUseNativeEvents: true,
+  shouldFocusDOMNode: false,
+  shouldUseNativeEvents: false,
+  // debug: true,
 });
 
 document.addEventListener("focusin", (e) => {
   console.log(e);
+});
+
+SpatialNavigation.eventEmitter.on("sn/onDidNotNavigate", (e) => {
+  console.log("didNotNavigate", e);
 });
 
 function setFocusableClass(el: HTMLElement, focused: boolean, className = "focused") {

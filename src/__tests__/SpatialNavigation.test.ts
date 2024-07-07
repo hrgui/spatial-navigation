@@ -10,6 +10,7 @@ describe("SpatialNavigation", () => {
 
   afterEach(() => {
     destroy();
+    SpatialNavigation.eventEmitter.removeAllEventListeners();
   });
 
   it("should allow horizontal navigation", () => {
@@ -154,5 +155,24 @@ describe("SpatialNavigation", () => {
     SpatialNavigation.navigateByDirection("right", {});
 
     expect(SpatialNavigation.getCurrentFocusKey()).toBe("child-3");
+  });
+
+  it("should be able to determine if there was no navigation occurring", () => {
+    createHorizontalLayout();
+
+    const x = vi.fn();
+
+    SpatialNavigation.eventEmitter.on("sn/onDidNotNavigate", x);
+
+    expect(SpatialNavigation.getCurrentFocusKey()).not.toBe("child-1");
+
+    SpatialNavigation.setFocus(ROOT_FOCUS_KEY);
+
+    expect(SpatialNavigation.getCurrentFocusKey()).toBe("child-1");
+
+    SpatialNavigation.navigateByDirection("left", {});
+
+    expect(SpatialNavigation.getCurrentFocusKey()).toBe("child-1");
+    expect(x).toHaveBeenCalled();
   });
 });

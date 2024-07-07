@@ -11,6 +11,7 @@ import throttle from "lodash/throttle";
 import VisualDebugger from "./VisualDebugger";
 import WritingDirection from "./WritingDirection";
 import measureLayout, { getBoundingClientRect } from "./measureLayout";
+import { DomEventEmitter } from "./DomEventEmitter";
 
 const DIRECTION_LEFT = "left";
 const DIRECTION_RIGHT = "right";
@@ -75,6 +76,7 @@ interface FocusableComponent {
   onBlur?: (layout: FocusableComponentLayout, details: FocusDetails) => void;
   onUpdateFocus: (focused: boolean) => void;
   onUpdateHasFocusedChild: (hasFocusedChild: boolean) => void;
+  onDidNotNavigate?: () => void;
   saveLastFocusedChild?: boolean;
   trackChildren?: boolean;
   preferredChildFocusKey?: string;
@@ -237,6 +239,8 @@ class SpatialNavigationService {
   private setFocusDebounced: DebouncedFunc<any>;
 
   private writingDirection: WritingDirection;
+
+  eventEmitter: typeof DomEventEmitter;
 
   /**
    * Used to determine the coordinate that will be used to filter items that are over the "edge"
@@ -522,6 +526,7 @@ class SpatialNavigationService {
     this.shouldFocusDOMNode = false;
     this.shouldUseNativeEvents = false;
     this.writingDirection = WritingDirection.LTR;
+    this.eventEmitter = DomEventEmitter;
 
     this.pressedKeys = {};
 
@@ -766,6 +771,18 @@ class SpatialNavigationService {
     }
   }
 
+  onDidNotNavigate(component: FocusableComponent) {
+    this.log("onDidNotNavigate", "component", component.node);
+
+    if (component.onDidNotNavigate) {
+      component.onDidNotNavigate();
+    }
+
+    this.eventEmitter.emit("sn/onDidNotNavigate", {
+      component,
+    });
+  }
+
   onEnterRelease() {
     const component = this.focusableComponents[this.focusKey];
 
@@ -834,8 +851,10 @@ class SpatialNavigationService {
    * Based on the Direction
    */
   smartNavigate(direction: string, fromParentFocusKey: string, focusDetails: FocusDetails) {
+    let result = false;
     if (this.nativeMode) {
-      return;
+      // TODO: React Native support
+      return false;
     }
 
     const isVerticalDirection = direction === DIRECTION_DOWN || direction === DIRECTION_UP;
@@ -864,7 +883,7 @@ class SpatialNavigationService {
      */
     if (!fromParentFocusKey && !currentComponent) {
       this.setFocus(this.getForcedFocusKey());
-      return;
+      return true;
     }
 
     this.log(
@@ -950,6 +969,7 @@ class SpatialNavigationService {
 
       if (nextComponent) {
         this.setFocus(nextComponent.focusKey, focusDetails);
+        result = true;
       } else {
         const parentComponent = this.focusableComponents[parentFocusKey];
 
@@ -958,10 +978,26 @@ class SpatialNavigationService {
           : [];
 
         if (!parentComponent || !focusBoundaryDirections.includes(direction)) {
-          this.smartNavigate(direction, parentFocusKey, focusDetails);
+          result = this.smartNavigate(direction, parentFocusKey, focusDetails);
         }
       }
     }
+
+    this.log(
+      "smartNavigate",
+      "didNavigate",
+      currentComponent,
+      direction,
+      fromParentFocusKey,
+      focusDetails,
+      result
+    );
+
+    if (!result && currentComponent) {
+      this.onDidNotNavigate(currentComponent);
+    }
+
+    return result;
   }
 
   saveLastFocusedChildKey(component: FocusableComponent, focusKey: string) {
