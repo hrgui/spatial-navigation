@@ -30,43 +30,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: "Get latest name"
-        uses: pozetroninc/github-action-get-latest-release@master
-        id: get-latest
-        continue-on-error: true
-        with:
-          repository: "hrgui/spatial-navigation"
-          excludes: "prerelease, draft"
-
-      - name: "Check first release"
-        id: check-latest
-        run: |
-          if [ -n "${{ steps.get-latest.outputs.release }}" ];then \
-            echo "::set-output name=version::${{ steps.get-latest.outputs.release }}"; \
-            echo "::set-output name=from::${{ steps.get-latest.outputs.release }}"; \
-            echo "::set-output name=skip::false"; \
-          else
-            echo "::set-output name=version::1.0.0"; \
-            echo "::set-output name=from::4b825dc642cb6eb9a060e54bf8d69288fbee4904"; \
-            echo "::set-output name=skip::true"; \
-          fi
-
       - name: Run Lerna Changelog
         id: changelog
-        run: npx lerna-changelog --from="$TAG_FROM" --to="$TAG_TO"
+        run: npx lerna-changelog
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
-          TAG_FROM: "${{ steps.check-latest.outputs.from }}"
-          TAG_TO: "origin/main"
 
       - name: Create Draft Release
+        uses: softprops/action-gh-release@v1
         id: create_release
-        uses: actions/create-release@v1
         with:
-          tag_name: v${{ github.run_id }} # Set a unique tag for the release, such as the GitHub run ID
-          release_name: "Release ${{ github.run_id }}" # Set a name for the release
-          body: ${{ steps.changelog.outputs.changelog }} # Use changelog output as the release notes
-          draft: true # Create as a draft
-          prerelease: false
+          tag_name: v${{ github.run_id }} # Unique tag name, e.g., GitHub run ID
+          name: "Release ${{ github.run_id }}" # Release name
+          body: ${{ steps.changelog.outputs.changelog }} # Changelog content
+          draft: true # Creates as a draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
