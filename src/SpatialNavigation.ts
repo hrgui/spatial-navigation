@@ -21,6 +21,15 @@ const KEY_ENTER = "enter";
 
 export type Direction = "up" | "down" | "left" | "right";
 
+type DistanceCalculationMethod = "center" | "edges" | "corners";
+
+type DistanceCalculationFunction = (
+  refCorners: Corners,
+  siblingCorners: Corners,
+  isVerticalDirection: boolean,
+  distanceCalculationMethod: DistanceCalculationMethod
+) => number;
+
 const DEFAULT_KEY_MAP = {
   [DIRECTION_LEFT]: [37, "ArrowLeft"],
   [DIRECTION_UP]: [38, "ArrowUp"],
@@ -65,6 +74,19 @@ export interface FocusableComponentLayout {
   node: HTMLElement;
 }
 
+export type OnGetChildSiblingProps = {
+  currentComponent: FocusableComponent;
+  proposedSibling: FocusableComponent;
+  direction: string;
+  fromParentFocusKey: string;
+  focusDetails: FocusDetails;
+  isVerticalDirection: boolean;
+  isIncrementalDirection: boolean;
+  writingDirection: WritingDirection;
+};
+
+export type OnGetChildSiblingHandler = (props: OnGetChildSiblingProps) => boolean;
+
 interface FocusableComponent {
   focusKey: string;
   node: HTMLElement;
@@ -88,6 +110,8 @@ interface FocusableComponent {
   lastFocusedChildKey?: string;
   layout?: FocusableComponentLayout;
   layoutUpdated?: boolean;
+  extraProps?: any;
+  onGetChildSibling?: OnGetChildSiblingHandler;
 }
 
 interface FocusableComponentUpdatePayload {
@@ -190,6 +214,11 @@ class SpatialNavigationService {
    */
   private parentsHavingFocusedChild: string[];
 
+  /**
+   * When shouldFocusDOMNode is true, this prop specifies the focus options that should be passed to the element being focused.
+   */
+  private domNodeFocusOptions: FocusOptions;
+
   private enabled: boolean;
 
   /**
@@ -239,6 +268,10 @@ class SpatialNavigationService {
   private setFocusDebounced: DebouncedFunc<any>;
 
   private writingDirection: WritingDirection;
+
+  private distanceCalculationMethod: DistanceCalculationMethod;
+
+  private customDistanceCalculationFunction?: DistanceCalculationFunction;
 
   eventEmitter: typeof DomEventEmitter;
 
@@ -397,8 +430,19 @@ class SpatialNavigationService {
   static getSecondaryAxisDistance(
     refCorners: Corners,
     siblingCorners: Corners,
-    isVerticalDirection: boolean
+    isVerticalDirection: boolean,
+    distanceCalculationMethod: DistanceCalculationMethod,
+    customDistanceCalculationFunction?: DistanceCalculationFunction
   ) {
+    if (customDistanceCalculationFunction) {
+      return customDistanceCalculationFunction(
+        refCorners,
+        siblingCorners,
+        isVerticalDirection,
+        distanceCalculationMethod
+      );
+    }
+
     const { a: refA, b: refB } = refCorners;
     const { a: siblingA, b: siblingB } = siblingCorners;
     const coordinate = isVerticalDirection ? "x" : "y";
@@ -408,13 +452,33 @@ class SpatialNavigationService {
     const siblingCoordinateA = siblingA[coordinate];
     const siblingCoordinateB = siblingB[coordinate];
 
-    const distancesToCompare = [];
+    if (distanceCalculationMethod === "center") {
+      const refCoordinateCenter = (refCoordinateA + refCoordinateB) / 2;
+      const siblingCoordinateCenter = (siblingCoordinateA + siblingCoordinateB) / 2;
+      return Math.abs(refCoordinateCenter - siblingCoordinateCenter);
+    }
+    if (distanceCalculationMethod === "edges") {
+      // 1. Find the minimum and maximum coordinates for both ref and sibling
+      const refCoordinateEdgeMin = Math.min(refCoordinateA, refCoordinateB);
+      const siblingCoordinateEdgeMin = Math.min(siblingCoordinateA, siblingCoordinateB);
+      const refCoordinateEdgeMax = Math.max(refCoordinateA, refCoordinateB);
+      const siblingCoordinateEdgeMax = Math.max(siblingCoordinateA, siblingCoordinateB);
 
-    distancesToCompare.push(Math.abs(siblingCoordinateA - refCoordinateA));
-    distancesToCompare.push(Math.abs(siblingCoordinateA - refCoordinateB));
-    distancesToCompare.push(Math.abs(siblingCoordinateB - refCoordinateA));
-    distancesToCompare.push(Math.abs(siblingCoordinateB - refCoordinateB));
+      // 2. Calculate the distances between the closest edges
+      const minEdgeDistance = Math.abs(refCoordinateEdgeMin - siblingCoordinateEdgeMin);
+      const maxEdgeDistance = Math.abs(refCoordinateEdgeMax - siblingCoordinateEdgeMax);
 
+      // 3. Return the smallest distance between the edges
+      return Math.min(minEdgeDistance, maxEdgeDistance);
+    }
+
+    // Default to corners
+    const distancesToCompare = [
+      Math.abs(siblingCoordinateA - refCoordinateA),
+      Math.abs(siblingCoordinateA - refCoordinateB),
+      Math.abs(siblingCoordinateB - refCoordinateA),
+      Math.abs(siblingCoordinateB - refCoordinateB),
+    ];
     return Math.min(...distancesToCompare);
   }
 
@@ -457,12 +521,16 @@ class SpatialNavigationService {
       const primaryAxisDistance = primaryAxisFunction(
         refCorners,
         siblingCorners,
-        isVerticalDirection
+        isVerticalDirection,
+        this.distanceCalculationMethod,
+        this.customDistanceCalculationFunction
       );
       const secondaryAxisDistance = secondaryAxisFunction(
         refCorners,
         siblingCorners,
-        isVerticalDirection
+        isVerticalDirection,
+        this.distanceCalculationMethod,
+        this.customDistanceCalculationFunction
       );
 
       /**
@@ -518,6 +586,7 @@ class SpatialNavigationService {
      */
     this.parentsHavingFocusedChild = [];
 
+    this.domNodeFocusOptions = {};
     this.enabled = false;
     this.nativeMode = false;
     this.throttle = 0;
@@ -551,6 +620,7 @@ class SpatialNavigationService {
     this.setKeyMap = this.setKeyMap.bind(this);
     this.getCurrentFocusKey = this.getCurrentFocusKey.bind(this);
     this.doesFocusableExist = this.doesFocusableExist.bind(this);
+    this.updateRtl = this.updateRtl.bind(this);
 
     this.setFocusDebounced = debounce(this.setFocus, AUTO_RESTORE_FOCUS_DELAY, {
       leading: false,
@@ -561,6 +631,8 @@ class SpatialNavigationService {
     this.visualDebugger = null;
 
     this.logIndex = 0;
+
+    this.distanceCalculationMethod = "corners";
   }
 
   init({
@@ -571,10 +643,14 @@ class SpatialNavigationService {
     throttleKeypresses = false,
     useGetBoundingClientRect = false,
     shouldFocusDOMNode = false,
+    domNodeFocusOptions = {},
     shouldUseNativeEvents = false,
     rtl = false,
+    distanceCalculationMethod = "corners" as DistanceCalculationMethod,
+    customDistanceCalculationFunction = undefined as DistanceCalculationFunction,
   } = {}) {
     if (!this.enabled) {
+      this.domNodeFocusOptions = domNodeFocusOptions;
       this.enabled = true;
       this.nativeMode = nativeMode;
       this.throttleKeypresses = throttleKeypresses;
@@ -582,6 +658,8 @@ class SpatialNavigationService {
       this.shouldFocusDOMNode = shouldFocusDOMNode && !nativeMode;
       this.shouldUseNativeEvents = shouldUseNativeEvents;
       this.writingDirection = rtl ? WritingDirection.RTL : WritingDirection.LTR;
+      this.distanceCalculationMethod = distanceCalculationMethod;
+      this.customDistanceCalculationFunction = customDistanceCalculationFunction;
 
       this.debug = debug;
 
@@ -853,7 +931,6 @@ class SpatialNavigationService {
   smartNavigate(direction: string, fromParentFocusKey: string, focusDetails: FocusDetails) {
     let result = false;
     if (this.nativeMode) {
-      // TODO: React Native support
       return false;
     }
 
@@ -897,7 +974,7 @@ class SpatialNavigationService {
     if (currentComponent) {
       this.updateLayout(currentComponent.focusKey);
       const { parentFocusKey, focusKey, layout } = currentComponent;
-
+      const currentParentComponent = this.focusableComponents[parentFocusKey];
       const currentCutoffCoordinate = SpatialNavigationService.getCutoffCoordinate(
         isVerticalDirection,
         isIncrementalDirection,
@@ -919,6 +996,19 @@ class SpatialNavigationService {
             component.layout,
             this.writingDirection
           );
+
+          if (currentParentComponent && currentParentComponent.onGetChildSibling) {
+            return currentParentComponent.onGetChildSibling({
+              currentComponent,
+              proposedSibling: component,
+              direction,
+              fromParentFocusKey,
+              focusDetails,
+              isVerticalDirection,
+              isIncrementalDirection,
+              writingDirection: this.writingDirection,
+            });
+          }
 
           return isVerticalDirection
             ? isIncrementalDirection
@@ -971,7 +1061,7 @@ class SpatialNavigationService {
         this.setFocus(nextComponent.focusKey, focusDetails);
         result = true;
       } else {
-        const parentComponent = this.focusableComponents[parentFocusKey];
+        const parentComponent = currentParentComponent;
 
         const focusBoundaryDirections = parentComponent?.isFocusBoundary
           ? parentComponent.focusBoundaryDirections || [direction]
@@ -1161,6 +1251,8 @@ class SpatialNavigationService {
     focusable = true,
     isFocusBoundary,
     focusBoundaryDirections,
+    extraProps,
+    onGetChildSibling,
   }: FocusableComponent) {
     this.focusableComponents[focusKey] = {
       focusKey,
@@ -1198,6 +1290,8 @@ class SpatialNavigationService {
         node,
       },
       layoutUpdated: false,
+      extraProps,
+      onGetChildSibling,
     };
 
     if (!node) {
@@ -1319,7 +1413,7 @@ class SpatialNavigationService {
       const newComponent = this.focusableComponents[this.focusKey];
 
       if (this.shouldFocusDOMNode && newComponent.node) {
-        newComponent.node.focus();
+        newComponent.node.focus(this.domNodeFocusOptions);
       }
 
       newComponent.onUpdateFocus(true);
@@ -1546,6 +1640,14 @@ class SpatialNavigationService {
   doesFocusableExist(focusKey: string) {
     return !!this.focusableComponents[focusKey];
   }
+
+  /**
+   * This function updates the writing direction
+   * @param rtl whether the writing direction is right-to-left
+   */
+  updateRtl(rtl: boolean) {
+    this.writingDirection = rtl ? WritingDirection.RTL : WritingDirection.LTR;
+  }
 }
 
 /**
@@ -1566,4 +1668,5 @@ export const {
   updateAllLayouts,
   getCurrentFocusKey,
   doesFocusableExist,
+  updateRtl,
 } = SpatialNavigation;
