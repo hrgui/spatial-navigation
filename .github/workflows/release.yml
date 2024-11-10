@@ -36,6 +36,11 @@ jobs:
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: check
+        run: |
+          ls -al
+          cat CHANGELOG.md
+
       - name: Create Draft Release
         id: create_release
         uses: actions/create-release@v1
