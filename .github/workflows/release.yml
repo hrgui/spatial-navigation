@@ -36,7 +36,11 @@ jobs:
           # Capture changelog output into a variable
           CHANGELOG=$(npx lerna-changelog)
           echo "$CHANGELOG"
-          echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_OUTPUT
+           {
+              echo 'CHANGELOG<<EOF'
+              $CHANGELOG
+              echo EOF
+           } >> "$GITHUB_OUTPUT"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
