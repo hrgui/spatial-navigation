@@ -11,3 +11,8 @@ Forked from [norigin-spatial-navigation](https://github.com/NoriginMedia/Norigin
 
 - setFocusable now has defaults
 - navigateByDirection has focusDetails defaults
+
+# TODO
+
+- [ ] Build step (CJS/ESM only), no polyfills, rely on root to compile
+- [ ] Publish packages
