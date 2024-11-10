@@ -14,5 +14,4 @@ Forked from [norigin-spatial-navigation](https://github.com/NoriginMedia/Norigin
 
 # TODO
 
-- [ ] Build step (CJS/ESM only), no polyfills, rely on root to compile
 - [ ] Publish packages
