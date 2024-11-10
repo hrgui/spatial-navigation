@@ -46,7 +46,7 @@ jobs:
         with:
           tag_name: v${{ github.run_id }} # Unique tag name, e.g., GitHub run ID
           name: "Release ${{ github.run_id }}" # Release name
-          body: ${{ steps.changelog.outputs.changelog }} # Changelog content
+          body: "testing ${{ steps.changelog.outputs.changelog }}" # Changelog content
           draft: true # Creates as a draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
