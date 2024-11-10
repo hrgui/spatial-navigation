@@ -1,13 +1,14 @@
-import "./style.css";
-
 import { SpatialNavigation } from "./SpatialNavigation";
+import type { FocusableComponent } from "./SpatialNavigation";
+
+import "./style.css";
 
 (window as any).SpatialNavigation = SpatialNavigation;
 
 SpatialNavigation.init({
   shouldFocusDOMNode: false,
   shouldUseNativeEvents: false,
-  // debug: true,
+  debug: true,
 });
 
 document.addEventListener("focusin", (e) => {
@@ -26,7 +27,11 @@ function setFocusableClass(el: HTMLElement, focused: boolean, className = "focus
   }
 }
 
-function addElement(id: string, parentFocusKey = "SN:ROOT") {
+function addElement({
+  focusKey: id,
+  parentFocusKey = "SN:ROOT",
+  ...otherProps
+}: Partial<FocusableComponent>) {
   const x = document.querySelector(id) as HTMLElement;
   SpatialNavigation.addFocusable({
     focusKey: id,
@@ -49,21 +54,46 @@ function addElement(id: string, parentFocusKey = "SN:ROOT") {
     // forceFocus: false,
     // isFocusBoundary: false,
     // focusable: true,
+    ...otherProps,
   });
 
   return x;
 }
 
-addElement("#row1");
-addElement("#row2");
+addElement({ focusKey: "#row1" });
+addElement({
+  focusKey: "#row2",
+  onGetChildSibling: ({
+    isVerticalDirection,
+    isIncrementalDirection,
+    proposedSibling,
+    currentComponent,
+  }) => {
+    const currentComponentExtraProps = currentComponent.extraProps;
+    const proposedSiblingExtraProps = proposedSibling.extraProps;
+    const isHorizontalDirection = !isVerticalDirection;
 
-addElement("#item1", "#row1");
-addElement("#item2", "#row1");
-addElement("#item3", "#row1");
-addElement("#item4", "#row1");
-addElement("#item5", "#row2");
-addElement("#item6", "#row2");
-addElement("#item7", "#row2");
-addElement("#item8", "#row2");
+    if (currentComponentExtraProps && proposedSiblingExtraProps && isHorizontalDirection) {
+      const nextIndex = currentComponentExtraProps.index + 1;
+      const prevIndex = currentComponentExtraProps.index - 1;
+
+      return isIncrementalDirection
+        ? nextIndex === proposedSiblingExtraProps.index
+        : prevIndex === proposedSiblingExtraProps.index;
+    }
+
+    return false;
+  },
+});
+
+addElement({ focusKey: "#item1", parentFocusKey: "#row1", extraProps: { index: 1 } });
+addElement({ focusKey: "#item2", parentFocusKey: "#row1", extraProps: { index: 2 } });
+addElement({ focusKey: "#item3", parentFocusKey: "#row1", extraProps: { index: 3 } });
+addElement({ focusKey: "#item4", parentFocusKey: "#row1", extraProps: { index: 4 } });
+
+addElement({ focusKey: "#item5", parentFocusKey: "#row2", extraProps: { index: 1 } });
+addElement({ focusKey: "#item6", parentFocusKey: "#row2", extraProps: { index: 2 } });
+addElement({ focusKey: "#item7", parentFocusKey: "#row2", extraProps: { index: 3 } });
+addElement({ focusKey: "#item8", parentFocusKey: "#row2", extraProps: { index: 4 } });
 
 SpatialNavigation.setFocus("#item1");

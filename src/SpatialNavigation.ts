@@ -21,16 +21,16 @@ const KEY_ENTER = "enter";
 
 export type Direction = "up" | "down" | "left" | "right";
 
-type DistanceCalculationMethod = "center" | "edges" | "corners";
+export type DistanceCalculationMethod = "center" | "edges" | "corners";
 
-type DistanceCalculationFunction = (
+export type DistanceCalculationFunction = (
   refCorners: Corners,
   siblingCorners: Corners,
   isVerticalDirection: boolean,
   distanceCalculationMethod: DistanceCalculationMethod
 ) => number;
 
-const DEFAULT_KEY_MAP = {
+export const DEFAULT_KEY_MAP = {
   [DIRECTION_LEFT]: [37, "ArrowLeft"],
   [DIRECTION_UP]: [38, "ArrowUp"],
   [DIRECTION_RIGHT]: [39, "ArrowRight"],
@@ -87,7 +87,7 @@ export type OnGetChildSiblingProps = {
 
 export type OnGetChildSiblingHandler = (props: OnGetChildSiblingProps) => boolean;
 
-interface FocusableComponent {
+export interface FocusableComponent {
   focusKey: string;
   node: HTMLElement;
   parentFocusKey?: string;
@@ -114,7 +114,7 @@ interface FocusableComponent {
   onGetChildSibling?: OnGetChildSiblingHandler;
 }
 
-interface FocusableComponentUpdatePayload {
+export interface FocusableComponentUpdatePayload {
   node: HTMLElement;
   preferredChildFocusKey?: string;
   focusable: boolean;
@@ -127,16 +127,16 @@ interface FocusableComponentUpdatePayload {
   onBlur: (layout: FocusableComponentLayout, details: FocusDetails) => void;
 }
 
-interface FocusableComponentRemovePayload {
+export interface FocusableComponentRemovePayload {
   focusKey: string;
 }
 
-interface CornerCoordinates {
+export interface CornerCoordinates {
   x: number;
   y: number;
 }
 
-interface Corners {
+export interface Corners {
   a: CornerCoordinates;
   b: CornerCoordinates;
 }

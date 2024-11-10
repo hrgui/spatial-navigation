@@ -243,3 +243,27 @@ export const createVerticalLayout = () => {
     onUpdateHasFocusedChild: () => {},
   });
 };
+
+export function getDummyNode() {
+  return {
+    offsetLeft: 100,
+    offsetTop: 100,
+    offsetWidth: 400,
+    offsetHeight: 200,
+    parentElement: {
+      offsetLeft: 0,
+      offsetTop: 0,
+      offsetWidth: 1920,
+      offsetHeight: 1280,
+    } as HTMLElement,
+    offsetParent: {
+      offsetLeft: 0,
+      offsetTop: 0,
+      scrollLeft: 0,
+      scrollTop: 0,
+      offsetWidth: 1920,
+      offsetHeight: 1280,
+      nodeType: Node.ELEMENT_NODE,
+    } as HTMLElement,
+  } as unknown as HTMLElement;
+}

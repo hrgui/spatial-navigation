@@ -1,5 +1,10 @@
 import { ROOT_FOCUS_KEY, SpatialNavigation, destroy, init } from "../SpatialNavigation";
-import { createHorizontalLayout, createVerticalLayout } from "./helpers/domNodes";
+import {
+  createHorizontalLayout,
+  createRootNode,
+  createVerticalLayout,
+  getDummyNode,
+} from "./helpers/domNodes";
 
 describe("SpatialNavigation", () => {
   beforeEach(() => {
@@ -174,5 +179,107 @@ describe("SpatialNavigation", () => {
 
     expect(SpatialNavigation.getCurrentFocusKey()).toBe("child-1");
     expect(x).toHaveBeenCalled();
+  });
+
+  describe("onGetChildSibling", () => {
+    it("should navigate to the next node logically despite the layout is overlapping", () => {
+      createRootNode();
+
+      // create Row element
+      SpatialNavigation.addFocusable({
+        focusKey: "#row",
+        parentFocusKey: ROOT_FOCUS_KEY,
+        node: getDummyNode(),
+        trackChildren: true,
+        onUpdateFocus: () => {},
+        onUpdateHasFocusedChild: () => {},
+        onGetChildSibling: ({
+          isVerticalDirection,
+          isIncrementalDirection,
+          proposedSibling,
+          currentComponent,
+        }) => {
+          const currentComponentExtraProps = currentComponent.extraProps;
+          const proposedSiblingExtraProps = proposedSibling.extraProps;
+          const isHorizontalDirection = !isVerticalDirection;
+
+          if (currentComponentExtraProps && proposedSiblingExtraProps && isHorizontalDirection) {
+            const nextIndex = currentComponentExtraProps.index + 1;
+            const prevIndex = currentComponentExtraProps.index - 1;
+
+            return isIncrementalDirection
+              ? nextIndex === proposedSiblingExtraProps.index
+              : prevIndex === proposedSiblingExtraProps.index;
+          }
+
+          return false;
+        },
+      });
+
+      // create item elements
+
+      SpatialNavigation.addFocusable({
+        focusKey: "#item1",
+        node: getDummyNode(),
+        onUpdateFocus: () => {},
+        onUpdateHasFocusedChild: () => {},
+        parentFocusKey: "#row",
+        extraProps: { index: 1 },
+      });
+
+      SpatialNavigation.addFocusable({
+        focusKey: "#item2",
+        node: getDummyNode(),
+        onUpdateFocus: () => {},
+        onUpdateHasFocusedChild: () => {},
+        parentFocusKey: "#row",
+        extraProps: { index: 2 },
+      });
+
+      SpatialNavigation.addFocusable({
+        focusKey: "#item3",
+        node: getDummyNode(),
+        onUpdateFocus: () => {},
+        onUpdateHasFocusedChild: () => {},
+        parentFocusKey: "#row",
+        extraProps: { index: 3 },
+      });
+
+      SpatialNavigation.addFocusable({
+        focusKey: "#item4",
+        node: getDummyNode(),
+        onUpdateFocus: () => {},
+        onUpdateHasFocusedChild: () => {},
+        parentFocusKey: "#row",
+        extraProps: { index: 4 },
+      });
+
+      SpatialNavigation.setFocus("#item1");
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item1");
+
+      SpatialNavigation.navigateByDirection("right");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item2");
+
+      SpatialNavigation.navigateByDirection("right");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item3");
+
+      SpatialNavigation.navigateByDirection("right");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item4");
+
+      SpatialNavigation.navigateByDirection("left");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item3");
+
+      SpatialNavigation.navigateByDirection("left");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item2");
+
+      SpatialNavigation.navigateByDirection("left");
+
+      expect(SpatialNavigation.getCurrentFocusKey()).toBe("#item1");
+    });
   });
 });
