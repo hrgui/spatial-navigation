@@ -1,5 +1,5 @@
-import { SpatialNavigation } from "./SpatialNavigation";
-import type { FocusableComponent } from "./SpatialNavigation";
+import { SpatialNavigation } from "../../spatial-navigation-core/src/SpatialNavigation";
+import type { FocusableComponent } from "../../spatial-navigation-core/src/SpatialNavigation";
 
 import "./style.css";
 

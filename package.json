@@ -1,8 +1,11 @@
 {
-  "name": "spatial-navigation-core",
+  "name": "@hrgui/spatial-navigation",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite --port 8000 --host",
     "build": "tsc && vite build",
