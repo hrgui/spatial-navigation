@@ -1,5 +1,5 @@
-import { SpatialNavigation } from "../../spatial-navigation-core/src/SpatialNavigation";
-import type { FocusableComponent } from "../../spatial-navigation-core/src/SpatialNavigation";
+import { SpatialNavigation } from "@hrgui/spatial-navigation-core/SpatialNavigation";
+import type { FocusableComponent } from "@hrgui/spatial-navigation-core/SpatialNavigation";
 
 import "./style.css";
 

@@ -194,7 +194,7 @@ const normalizeKeyMap = (keyMap: BackwardsCompatibleKeyMap) => {
   return newKeyMap;
 };
 
-class SpatialNavigationService {
+export class SpatialNavigationService {
   private focusableComponents: { [index: string]: FocusableComponent };
 
   private visualDebugger: VisualDebugger;
