@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + TS</title>
+
+    <style>
+      body {
+        padding-left: 100px;
+      }
+
+      #row2 > * {
+        margin-left: -22px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="row1" style="display: flex">
+        <div tabindex="-1" id="item1">Item 1</div>
+        <div tabindex="-1" id="item2">Item 2</div>
+        <div tabindex="-1" id="item3">Item 3</div>
+        <div tabindex="-1" id="item4">Item 4</div>
+      </div>
+      <div id="row2" style="display: flex">
+        <div tabindex="-1" id="item5">Item 1</div>
+        <div tabindex="-1" id="item6">Item 2</div>
+        <div tabindex="-1" id="item7">Item 3</div>
+        <div tabindex="-1" id="item8">Item 4</div>
+      </div>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
