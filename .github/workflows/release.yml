@@ -32,7 +32,11 @@ jobs:
 
       - name: Run Lerna Changelog
         id: changelog
-        run: npx lerna-changelog
+        run: |
+          # Capture changelog output into a variable
+          CHANGELOG=$(npx lerna-changelog)
+          echo "$CHANGELOG"
+          echo "::set-output name=changelog::$CHANGELOG"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
