@@ -1,4 +1,4 @@
-# @hrgui/spatial-navigation-core
+# @hrgui/spatial-navigation
 
 Forked from [norigin-spatial-navigation](https://github.com/NoriginMedia/Norigin-Spatial-Navigation)
 
