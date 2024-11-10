@@ -59,11 +59,6 @@ jobs:
           TAG_FROM: "${{ steps.check-latest.outputs.from }}"
           TAG_TO: "origin/main"
 
-      - name: check
-        run: |
-          ls -al
-          cat CHANGELOG.md
-
       - name: Create Draft Release
         id: create_release
         uses: actions/create-release@v1
