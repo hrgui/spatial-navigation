@@ -36,7 +36,7 @@ jobs:
           # Capture changelog output into a variable
           CHANGELOG=$(npx lerna-changelog)
           echo "$CHANGELOG"
-          echo "::set-output name=changelog::$CHANGELOG"
+          echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_OUTPUT
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,7 +46,7 @@ jobs:
         with:
           tag_name: v${{ github.run_id }} # Unique tag name, e.g., GitHub run ID
           name: "Release ${{ github.run_id }}" # Release name
-          body: "testing ${{ steps.changelog.outputs.changelog }}" # Changelog content
+          body: "testing ${{ steps.changelog.outputs.CHANGELOG }}" # Changelog content
           draft: true # Creates as a draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
