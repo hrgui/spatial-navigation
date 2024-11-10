@@ -7,6 +7,10 @@
     "packages/*",
     "playgrounds/*"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hrgui/spatial-navigation.git"
+  },
   "scripts": {
     "dev": "vite --port 8000 --host",
     "build": "tsc && vite build",
