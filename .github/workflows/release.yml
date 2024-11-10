@@ -37,7 +37,7 @@ jobs:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Draft Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         id: create_release
         with:
           tag_name: v${{ github.run_id }} # Unique tag name, e.g., GitHub run ID
