@@ -1,11 +1,9 @@
-name: Release Workflow
+name: Create Draft Release Workflow
 
 on:
   push:
     branches:
       - main # Change to your main branch if necessary
-
-  workflow_dispatch: # Allows manual triggers from GitHub
 
 jobs:
   create-draft-release:
