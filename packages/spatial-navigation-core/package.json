@@ -1,6 +1,6 @@
 {
   "name": "@hrgui/spatial-navigation-core",
-  "version": "0.0.0",
+  "version": "0.0.0-test",
   "description": "",
   "main": "index.ts",
   "scripts": {
